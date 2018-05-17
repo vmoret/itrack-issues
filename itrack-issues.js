@@ -62,7 +62,8 @@ const httpGet = (url, callback) => {
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
                     "Sep", "Oct", "Nov", "Dec"];
-const parseDate = datestring => new Date(Date.parse(datestring));
+// HACK: IE11 `Date.parse` doesn't handle timezones properly --> remove them.
+const parseDate = datestring => new Date(Date.parse(datestring.split('+')[0]));
 const formatDate = date =>
     date.getDate() + '/' + monthNames[date.getMonth()] + '/' + date.getFullYear();    
 const parseAndFormatDate = compose(formatDate, parseDate);
