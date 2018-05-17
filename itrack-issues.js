@@ -36,7 +36,7 @@ const template = `<div class="itrack">
 </table>
 </div>`;
 
-const compose = (a, b) => c => b(a(c));
+const compose = (a, b) => c => a(b(c));
     
 const httpGet = (url, callback) => {
 	const xhttp = new XMLHttpRequest();
@@ -60,15 +60,16 @@ const httpGet = (url, callback) => {
   	xhttp.send();
 };
 
-const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                    "Sep", "Oct", "Nov", "Dec"];
 const parseDate = datestring => new Date(Date.parse(datestring));
 const formatDate = date =>
     date.getDate() + '/' + monthNames[date.getMonth()] + '/' + date.getFullYear();    
-const parseAndFormatDate = compose(parseDate, formatDate);
+const parseAndFormatDate = compose(formatDate, parseDate);
 
 const parseField = name => issue => issue.fields[name];
-const parseFieldValue = name => compose(parseField(name), x => x.name);
-const parseCustomFieldValue = name => compose(parseField(name), x => x.value);
+const parseFieldValue = name => compose(x => x.name, parseField(name));
+const parseCustomFieldValue = name => compose(x => x.value, parseField(name));
     
 const fieldMappings = {
     summary: ['summary', parseField('summary')],
@@ -76,15 +77,17 @@ const fieldMappings = {
     status: ['status', parseFieldValue('status')],
     severity: ['customfield_10002', parseCustomFieldValue('customfield_10002')],
     customer: ['customfield_10090', parseField('customfield_10090')],
-    created: ['created', compose(parseField('created'), parseAndFormatDate)]
+    created: ['created', compose(parseAndFormatDate, parseField('created'))]
 };
 
 const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
 
-const parseFields = fields => fields.split(',').filter(x => x in fieldMappings).map(x => fieldMappings[x].concat([capitalize(x)]));
+const parseFields = fields => fields.split(',').filter(
+    x => x in fieldMappings).map(x => fieldMappings[x].concat([capitalize(x)]));
 
 const buildUrl = ({apiBase, jql, fields, maxResults}) => 
-    apiBase + '?jql=' + jql + '&maxResults=' + maxResults + '&fields=issuetype,status,' + parseFields(fields).map(xs => xs[0]).join(',');
+    apiBase + '?jql=' + jql + '&maxResults=' + maxResults + 
+    '&fields=issuetype,status,' + parseFields(fields).map(xs => xs[0]).join(',');
     
 function buildIssueStatusStyle(issue) {
     var status = issue.fields.status.name;
